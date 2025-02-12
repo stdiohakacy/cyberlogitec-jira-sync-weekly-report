@@ -1,0 +1,23 @@
+{
+  "name": "cyberlogitec-jira-sync-weekly-report",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stdiohakacy/cyberlogitec-jira-sync-weekly-report.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stdiohakacy/cyberlogitec-jira-sync-weekly-report/issues"
+  },
+  "homepage": "https://github.com/stdiohakacy/cyberlogitec-jira-sync-weekly-report#readme",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
