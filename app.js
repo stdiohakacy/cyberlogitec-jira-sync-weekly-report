@@ -9,6 +9,19 @@ const port = 3000;
 app.use(express.json());
 app.use(cookieParser());
 
+function getMonday(date) {
+    const day = date.getDay(); // Lấy thứ của ngày hiện tại (0 = Chủ Nhật, 1 = Thứ Hai, ...)
+    const diff = day === 0 ? -6 : 1 - day; // Nếu Chủ Nhật, lùi về thứ Hai tuần trước
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + diff);
+    return monday;
+}
+
+// Hàm định dạng ngày thành chuỗi 'DD MMM YYYY'
+function formatDate(date) {
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 const jiraHeaders = {
     'Accept': '*/*',
     'Accept-Encoding': 'gzip, deflate, br, zstd',
@@ -66,8 +79,48 @@ async function getCornalIssues() {
   }
 }
 
-async function postNewRequirement() {
+
+
+async function postNewRequirement(issues) {
+    const inprogressIssues = issues.filter(issue => issue.status === 'In Progress');
+    const doneIssues = issues.filter(issue => issue.status === 'Done');
+
+    const reqCtnt = `
+        <h3>Weekly Work Report</h3>
+        <em>Cornal Nguyen</em><br>
+        <em>${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</em>
+
+        <h4>1. Job Overview</h4>
+        <p>Dear Manager, over the past week, I completed the following tasks:</p>
+        <ul>
+            ${doneIssues.map(task => `<li><strong>DONE ${task.key}:</strong> ${task.summary}</li>`).join('')}
+        </ul>
+
+        <h4>2. Next Week</h4>
+        <ul>
+            ${inprogressIssues.map(task => `<li><strong>IN PROGRESS ${task.key}:</strong> ${task.summary}</li>`).join('')}
+        </ul>
+    `;
+
+    const reqTxtCtnt = `### Weekly Work Report
+    Cornal Nguyen
+    ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+
+    #### 1. Job Overview
+    Dear Manager, over the past week, I completed the following tasks:
+
+    ${doneIssues.map(task => `- DONE ${task.key}: ${task.summary}`).join('\n')}
+
+    #### 2. Next Week
+    ${inprogressIssues.map(task => `- IN PROGRESS ${task.key}: ${task.summary}`).join('\n')}
+    `;
+
   try {
+
+    const today = new Date();
+    const startOfWeek = getMonday(today);
+    const reqTitNm = `[ESG][POOL][${formatDate(startOfWeek)} - ${formatDate(today)}] Weekly Report`;
+    
     const data = {
         "requirementVO": {
             "pjtId": "PJT20220609000000001",
@@ -81,12 +134,12 @@ async function postNewRequirement() {
             "jbTpNm": "Reporting",
             "bizProcId": "ABP20220825000000001",
             "bizProcNm": "Task",
-            "reqCtnt": "<p>Test</p>",
-            "reqTxtCtnt": "Test",
+            "reqCtnt": reqCtnt,
+            "reqTxtCtnt": reqTxtCtnt,
             "itrtnId": "ITR20220609000000001",
             "imptTpCd": "IMPT_TP_CDLOW",
             "imptNm": "Low",
-            "reqTitNm": "Test",
+            "reqTitNm": reqTitNm,
             "crntReqCntn": "",
             "prvsReqCntn": "",
             "emailFlg": "N",
@@ -702,31 +755,31 @@ async function postNewRequirement() {
         "flgRefer": "",
         "arrRelated": []
     }
-      const response = await axios({
-          method: 'post',
-          url: 'https://blueprint.cyberlogitec.com.vn/api/new-task/new-requirement',
-          data,
-          headers: {
-              'Accept': 'application/json, text/plain, */*',
-              'Accept-Encoding': 'gzip, deflate, br, zstd',
-              'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
-              'Connection': 'keep-alive',
-              'DNT': '1',
-              'Host': 'blueprint.cyberlogitec.com.vn',
-              'Referer': 'https://blueprint.cyberlogitec.com.vn/',
-              'Sec-Fetch-Dest': 'empty',
-              'Sec-Fetch-Mode': 'cors',
-              'Sec-Fetch-Site': 'same-origin',
-              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
-              'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132"',
-              'sec-ch-ua-mobile': '?0',
-              'sec-ch-ua-platform': '"macOS"',
-              'Cookie': process.env.CYBER_COOKIE 
-          }
-      });
-      const newRequirement = response.data;
-      return newRequirement
-      
+
+    const response = await axios({
+        method: 'post',
+        url: 'https://blueprint.cyberlogitec.com.vn/api/new-task/new-requirement',
+        data,
+        headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
+            'Connection': 'keep-alive',
+            'DNT': '1',
+            'Host': 'blueprint.cyberlogitec.com.vn',
+            'Referer': 'https://blueprint.cyberlogitec.com.vn/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+            'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"macOS"',
+            'Cookie': process.env.CYBER_COOKIE 
+        }
+    });
+
+    return response.data;
   } catch (error) {
       console.error('Error sending request:', error.message);
   }
@@ -745,33 +798,6 @@ async function getRequirementDetail(reqId) {
 
 async function putSaveReqJobDetail(data) {
   try {
-    // const data = {
-    //     "categoryList": [
-    //         {
-    //             "utPnt": 0,
-    //             "jbId": "JOB20220616000000005",
-    //             "jbNm": "Training",
-    //             "itmAmt": 0,
-    //             "$parent": 0
-    //         },
-    //         {
-    //             "utPnt": 200,
-    //             "jbId": "JOB20220616000000006",
-    //             "jbNm": "High",
-    //             "itmAmt": "5",
-    //             "$parent": "JOB20220616000000005",
-    //             "prntNm": "Training"
-    //         }
-    //     ],
-    //     "totalPoint": 1030,
-    //     // 
-    //     "reqId": "PRQ20250212000000233",
-    //     "cmtCtnt": "<div class=\"system-comment\"> • Added Point: </div>   <div style=\"margin-left: 10px\"> <b>&nbsp;Training:</b></div>  <div style=\"margin-left: 10px\"><i> &nbsp;&nbsp;High: </i>1000 </div> ",
-    //     "pjtId": "PJT20220609000000001",
-    //     "subPjtId": "PJT20230329000000001",
-    //     "action": "REQ_WTC_EFRT"
-    //   }
-
       const response = await axios({
           method: 'put',
           url: 'https://blueprint.cyberlogitec.com.vn/api/save-req-job-detail',
@@ -834,47 +860,10 @@ async function putUpdatePointProcessPhase(data) {
 
 app.get("/report", async (req, res) => {
     try {
-      // let cornalIssues = await getCornalIssues();
-      // let cornalIssues = [
-      //   {
-      //     key: 'POM-176',
-      //     summary: '(Cornal) Set up Docker container local',
-      //     status: 'In Progress',
-      //     assignee: 'Cornal Nguyen'
-      //   },
-      //   {
-      //     key: 'POM-150',
-      //     summary: 'Setup CI for Dev Env (Github action) using Self-host runner',
-      //     status: 'In Progress',
-      //     assignee: 'Cornal Nguyen'
-      //   },
-      //   {
-      //     key: 'POM-151',
-      //     summary: 'Document guideline (How to Start)',
-      //     status: 'TO DO',
-      //     assignee: 'Cornal Nguyen'
-      //   },
-      //   {
-      //     key: 'POM-114',
-      //     summary: 'Create configuration GKE with manifest file',
-      //     status: 'Done',
-      //     assignee: 'Cornal Nguyen'
-      //   },
-      //   {
-      //     key: 'POM-112',
-      //     summary: 'Sync Application (FE) to GKE through ArgoCD',
-      //     status: 'Done',
-      //     assignee: 'Cornal Nguyen'
-      //   },
-      //   {
-      //     key: 'POM-113',
-      //     summary: 'Connect Container with Google Artifact Registry (FE)',
-      //     status: 'Done',
-      //     assignee: 'Cornal Nguyen'
-      //   }
-      // ]
+      let cornalIssues = await getCornalIssues();
 
-      let newRequirement = await postNewRequirement()
+      let newRequirement = await postNewRequirement(cornalIssues)
+      
       const { saveFlg, msgId, seqId, reqId } = newRequirement
       if(saveFlg !== 'SAVE_SUCCEED') {
         return res.json({ error: 'saveFlg is not save succeed! (postNewRequirement)' })
